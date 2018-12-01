@@ -92,8 +92,17 @@ RUN set -x \
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
-EXPOSE 80
+RUN chmod g+rwx /var/cache/nginx /var/run /var/log/nginx
+
+# users are not allowed to listen on priviliged ports
+RUN sed -i.bak 's/listen\(.*\)80;/listen 8081;/' /etc/nginx/conf.d/default.conf
+EXPOSE 8081
+
+# comment user directive as master process is run as user in OpenShift anyhow
+RUN sed -i.bak 's/^user/#user/' /etc/nginx/nginx.conf
+
+RUN addgroup nginx root
+USER nginx
 
 STOPSIGNAL SIGTERM
-
 CMD ["nginx", "-g", "daemon off;"]
